@@ -79,4 +79,24 @@ __bl_version_string_load() {
 	}
 }
 
+################################################################################
+__bl_program_exists_load() {
+	__bl_module_load __bl_echo_color
+	__bl_module_load __bl_sleep
+
+	__bl_program_exists() {
+		local program
+		local -i quiet
+
+		[[ "${1}" =~ ^-q|--quiet$ ]] && quiet=1 && shift || quiet=0
+
+		program="${1}"
+
+		if ! command -v "${program}" >/dev/null; then
+			[[ "${quiet}" -eq 1 ]] || __bl_echo_color "bold red" "Error: the program '${program}' is not available."
+			return 1
+		fi
+	}
+}
+
 # vim: set ft=sh:

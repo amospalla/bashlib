@@ -52,6 +52,7 @@ __bl_modules() {
 		[__bl_path_canonicalize]="path/path.sh"
 		[__bl_printf_color]="io/color.sh"
 		[__bl_printf_or_echo_color]="io/color.sh"  # internal use only
+		[__bl_program_exists]="utils/utils.sh"
 		[__bl_sleep]="builtin/builtin.sh"
 		[__bl_temp_path_get]="utils/utils.sh"
 		[__bl_trap_error]="error/error.sh"
