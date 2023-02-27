@@ -12,9 +12,9 @@ git clone https://github.com/amospalla/bashlib/
 * bash >= 4.2
 
 ## Usage:
-1 Source the file `src/main.sh`
-2 Load modules using `__bl_module_load __bl_<some_module_name>`
-3 Use modules `__bl_<some_module_name>`
+1. Source the file `src/main.sh`
+2. Load modules using `__bl_module_load __bl_<some_module_name>`
+3. Use modules `__bl_<some_module_name>`
 
 * Check for code samples under the _examples_ folder.
 
