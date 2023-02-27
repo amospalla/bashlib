@@ -8,22 +8,6 @@ Bashlib is a set of bash libraries to help the writing of bash scripts.
 git clone https://github.com/amospalla/bashlib/
 ```
 
-# Usage
-
-To use the library import the file `src/main.sh` and use it like this:
-
-* File `myprogram.sh`
-```
-#!/usr/bin/env bash
-
-. src/main.sh
-
-__bl_module_load __bl_trap_error
-__bl_module_load __bl_echo_color
-
-__bl_run_main "${@}"
-```
-
 ## Requirements
 * bash >= 4.2
 
@@ -49,6 +33,9 @@ variable __bl_interactive_mode. This is to avoid Bashlib setting:
 _set -eu -o pipefail -o errtrace_.
 
 # License
+
+All code found in this repository is licensed under GPL v3
+
 [source]
 ----
 Copyright (c) 2023 Jordi Marqués
