@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 main() {
-    echo "Hello world"
+	echo "Hello world"
 }
 
 # vim: set ft=sh:

@@ -39,7 +39,7 @@ __bl_initialize_common
 # Main program
 
 main() {
-    echo "Hello world"
+	echo "Hello world"
 }
 
 

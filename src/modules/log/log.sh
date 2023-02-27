@@ -20,7 +20,7 @@
 
 ################################################################################
 function __bl_log_load() {
-    __bl_module_load __bl_echo_color
+	__bl_module_load __bl_echo_color
 
 	function __bl_log() {
 		# log(str: level, str: msg)

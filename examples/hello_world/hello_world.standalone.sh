@@ -227,7 +227,7 @@ unset -f '__bl_log_init'
 # Main program
 
 main() {
-    __bl_echo_color green "Hello world"
+	__bl_echo_color green "Hello world"
 }
 
 

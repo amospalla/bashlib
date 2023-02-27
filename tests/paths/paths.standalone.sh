@@ -132,7 +132,6 @@ __bl_initialize_common
 # Bashlib initialization end
 
 # Main program
-#!/usr/bin/env bash
 
 main() {
 	local in_bashlib_path
