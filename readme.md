@@ -2,6 +2,8 @@
 
 Bashlib is a set of bash libraries to help the writing of bash scripts.
 
+This is a work in progress, use it as is at your own risk.
+
 ## Installation
 
 ```bash
