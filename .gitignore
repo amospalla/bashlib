@@ -2,3 +2,5 @@
 !/programs/.keep
 !/programs/generate_standalone.sh
 !/programs/readme.md
+
+/tests/*/*.standalone.sh
