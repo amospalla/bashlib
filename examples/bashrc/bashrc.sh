@@ -6,7 +6,7 @@ else
 	. "../../src/main.sh"  # This file has been invoked from the same path without directory component
 fi
 
-__bl_generate_standalone_interactive=1
+__bl_interactive_mode=1
 __bl_run_main "${@}"
 
 # vim: set ft=sh:

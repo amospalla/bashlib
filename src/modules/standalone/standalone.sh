@@ -42,9 +42,9 @@ __bl_generate_standalone_load() {
 		__echo
 		__echo "# Generated using bashlib"
 
-		# When __bl_generate_standalone_interactive is set to 1 the user specifies that the main program
+		# When interactive_mode is set to 1 the user specifies that the main program
 		# is sourced on interactive sessions.
-		if [[ "${__bl_generate_standalone_interactive:-0}" -eq 0 ]]; then
+		if [[ "${__bl_interactive_mode:-0}" -eq 0 ]]; then
 			__echo
 			__echo '[[ "${DEBUG:-0}" -eq 1 ]] && set -x'
 			__echo
