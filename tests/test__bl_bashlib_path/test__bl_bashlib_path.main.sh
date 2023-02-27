@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -eu -o pipefail -o errtrace
-
 main() {
 	local script_full_path
 	local script_name
@@ -10,13 +8,12 @@ main() {
 	local w f relative_path
 	local bashlib_path
 
-	script_name="paths"
-	script_full_path="$(dirname "$(readlink -f "${0}")")"
+	script_name="helper__bl_bashlib_path"
+	script_full_path=$(dirname "${0}")  # Get this script path
+	script_full_path+="/../${script_name}"  # Point to ../<script_name>
+	script_full_path=$(readlink -f "${script_full_path}")
 
 	bashlib_path="$(readlink -f "${script_full_path}/../../src")"
-
-	/home/jordi/projectes/bashlib/examples/generate_standalone.sh
-
 
 	what+=( "${script_full_path}/${script_name}.sh" )
 	what+=( "${script_full_path}/${script_name}.standalone.sh" )

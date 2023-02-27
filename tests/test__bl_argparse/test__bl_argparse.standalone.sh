@@ -947,7 +947,7 @@ __bl_test_parameter() {
 	input_tokens=( "-short" )
 	expected_tree_text="${__bl_program_name} -short|--large"
 }
- 
+
 __bl_test_variable() {
 	argparse_defs=":variable:a:"
 	input_tokens=( "random value" )
