@@ -137,8 +137,6 @@ main() {
 		# Load test
 		"${test}"
 
-		printf "%s" "test ${test} executes: "
-
 		if [[ "${expected_tree_text}" ]]; then
 			expected_tree_text+="${__bl_character_newline}${__bl_program_name} -h|--help"
 		else
@@ -177,8 +175,11 @@ main() {
 		fi
 
 		if [[ "${failed}" -eq 0 ]]; then
-			__bl_echo_color green "ok"
+			true
+			# printf "%s" "test ${test} executes: "
+			# __bl_echo_color green "ok"
 		else
+			printf "%s" "test ${test} executes: "
 			__bl_echo_color boldred "fail"
 		fi
 

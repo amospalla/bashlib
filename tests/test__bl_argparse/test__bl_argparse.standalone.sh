@@ -912,7 +912,6 @@ unset -f '__bl_log_init'
 # Bashlib initialization end
 
 # Main program
-#!/usr/bin/env bash
 
 __bl_test_empty_input() {
 	argparse_defs=""
@@ -1051,8 +1050,6 @@ main() {
 		# Load test
 		"${test}"
 
-		printf "%s" "test ${test} executes: "
-
 		if [[ "${expected_tree_text}" ]]; then
 			expected_tree_text+="${__bl_character_newline}${__bl_program_name} -h|--help"
 		else
@@ -1091,8 +1088,11 @@ main() {
 		fi
 
 		if [[ "${failed}" -eq 0 ]]; then
-			__bl_echo_color green "ok"
+			true
+			# printf "%s" "test ${test} executes: "
+			# __bl_echo_color green "ok"
 		else
+			printf "%s" "test ${test} executes: "
 			__bl_echo_color boldred "fail"
 		fi
 
