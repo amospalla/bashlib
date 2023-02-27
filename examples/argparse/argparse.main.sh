@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-main() {
+parse_arguments() {
 	local argparse_defs=""
 
 	# Program name, overwrites the automatic retrieved program name (optional)
@@ -49,6 +49,10 @@ main() {
 	__bl_argparse_doc_examples_text+=("commit the changes in the staged area")
 
 	__bl_argparse "${argparse_defs}" "${@}"
+}
+
+main() {
+	parse_arguments "${@}"
 
 	__bl_color green
 	printf "argparser succeeded, correct input tokens were issued, we can access valid tokens "
