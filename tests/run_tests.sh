@@ -24,7 +24,7 @@ main() {
 	cd "${mypath}"
 	./generate_standalone.sh
 
-	for test in "test__bl_"*; do
+	for test in "test_"*; do
 		[[ -d "${test}" ]] || continue
 
 		echo
