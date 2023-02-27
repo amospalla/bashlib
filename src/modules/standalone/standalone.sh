@@ -114,7 +114,9 @@ __bl_generate_standalone_load() {
 		__echo "# Main program"
 
 		if grep -Eq -e "^#\s*vim:\s*set\s+ft=sh\s*:$" -e "^#!/usr/bin/env bash$" "${main_program_source_path}"; then
-			grep -Ev -e "^#\s*vim:\s*set\s+ft=sh\s*:$" -e "^#!/usr/bin/env bash$" "${main_program_source_path}" >> "${__bl_generate_standalone_filename}"
+			# Remove shebang, vim modeline and empty lines at the end of the file.
+			grep -Ev -e "^#\s*vim:\s*set\s+ft=sh\s*:$" -e "^#!/usr/bin/env bash$" "${main_program_source_path}" \
+				| sed ':a; /^[[:space:]]*$/ { $d; N; ba; }' >> "${__bl_generate_standalone_filename}"
 		else
 			cat "${main_program_source_path}" >> "${__bl_generate_standalone_filename}"
 		fi
