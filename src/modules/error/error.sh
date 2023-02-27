@@ -81,12 +81,9 @@ __bl_trap_error_load() {
 
 __bl_trap_error_init() {
 	# trap_error init: make trap functions available and setup traps.
-	# __bl_trap_error
 
-	if [[ "${__bl_interactive_mode:-0}" -eq 0 ]]; then
-		trap '__bl_trap_error_on_error $? 1' ERR SIGHUP SIGTERM
-		trap '__bl_trap_error_on_int   $?' SIGINT
-	fi
+	trap '__bl_trap_error_on_error $? 1' ERR SIGHUP SIGTERM
+	trap '__bl_trap_error_on_int   $?' SIGINT
 }
 
 # vim: set ft=sh:
