@@ -76,29 +76,35 @@ __bl_initialize_common
 # Bashlib initialization end
 
 # Main program
-#!/usr/bin/env bash
 
 check() {
-	local good
-	good="$(realpath -m "${1}")"
+	local expected_path
+	local obtained_path
+
+	expected_path="$(realpath -m "${1}")"
+
 	__bl_path_canonicalize "${1}"
-	if [[ "${good}" != "${__bl_return}" ]]; then
-		echo "'${1}' => '${__bl_return}'  deuria ser '${good}'"
+	obtained_path="${__bl_return}"
+
+	if [[ "${expected_path}" != "${obtained_path}" ]]; then
+		echo "Error: Input: '${1}', obtained_path: '${obtained_path}', expected_path:'${expected_path}'."
 		exit 1
-	else
-		echo "'${1}' => '${__bl_return}' OK"
+	# else
+	# 	echo "OK: Input: '${1}', obtained_path: '${obtained_path}', expected_path:'${expected_path}'."
 	fi
 }
 
 main() {
-	local p1 p2 p3 p4 p5
+	local -a strings
+	local string1 string2 string3 string4 string5
 
-	for p1 in foo bar . .. / /. /.. // ///; do
-		for p2 in "" foo bar . .. / /. /.. // ///; do
-			for p3 in "" foo bar . .. / /. /.. // ///; do
-				for p4 in "" foo bar . .. / /. /.. // ///; do
-					for p5 in "" foo bar . .. / /. /.. // ///; do
-						check "${p1}${p2}${p3}${p4}${p5}"
+	strings=(foo bar . .. / /. /.. // ///)
+	for string1 in "${strings[@]}"; do
+		for string2 in "${strings[@]}"; do
+			for string3 in "${strings[@]}"; do
+				for string4 in "${strings[@]}"; do
+					for string5 in "${strings[@]}"; do
+						check "${string1}${string2}${string3}${string4}${string5}"
 					done
 				done
 			done
