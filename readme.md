@@ -2,7 +2,7 @@
 
 Bashlib is a set of bash libraries to help the writing of bash scripts.
 
-# Installation
+## Installation
 
 ```bash
 git clone https://github.com/amospalla/bashlib/
@@ -18,12 +18,12 @@ git clone https://github.com/amospalla/bashlib/
 
 * Check for code samples under the _examples_ folder.
 
-# Generating a standalone script
+## Generating a standalone script
 Scripts using the library can be exported to a standalone single file. The script script must be written in two separated files, one with that sources Bashlib, loads modules and calls __bl_run_main and other with the final main function (this is how example programs and tests are written).
 
 To generate the file execute the program with the exported variable `__bl_generate_standalone_filename` set to the destination file.
 
-# Using in interactive mode
+## Using in interactive mode
 When using Bashlib on .bashrc file or in interactive mode you must set the variable __bl_interactive_mode. This is to avoid Bashlib setting _set -eu -o pipefail -o errtrace_.
 
 ## License
