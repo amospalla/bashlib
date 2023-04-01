@@ -40,11 +40,13 @@ parse_arguments() {
 	__bl_argparse_doc_add_parameter "-v|--verbose" "execute program in verbose mode"
 
 	# Documentation: Examples.
-	__bl_argparse_doc_examples_code+=("${__bl_argparse_program_name} --verbose add --all")
-	__bl_argparse_doc_examples_text+=("add all files to the stage area in verbose mode")
+	__bl_argparse_doc_add_example \
+		"${__bl_argparse_program_name} --verbose add --all" \
+		"add all files to the stage area in verbose mode"
 
-	__bl_argparse_doc_examples_code+=("${__bl_argparse_program_name} commit -m \"some message\"")
-	__bl_argparse_doc_examples_text+=("commit the changes in the staged area")
+	__bl_argparse_doc_add_example \
+		"${__bl_argparse_program_name} commit -m \"some message\"" \
+		"commit the changes in the staged area"
 
 	__bl_argparse "${__bl_argparse_arguments_definition}" "${@}"
 }

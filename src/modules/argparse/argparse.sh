@@ -775,8 +775,8 @@ __bl_argparse_load() {
 				__bl_printf_color "${__bl_argparse_color_name}" "  $ ${__bl_argparse_doc_examples_code[i]}"
 				__bl_color
 
-				[[ "${__bl_argparse_doc_examples_text[i]: -1}" == "." ]] && dot="" || dot="."
-				echo ": ${__bl_argparse_doc_examples_text[i]}${dot}"
+				[[ "${__bl_argparse_examples_description[i]: -1}" == "." ]] && dot="" || dot="."
+				echo ": ${__bl_argparse_examples_description[i]}${dot}"
 			done
 		fi
 	}
@@ -829,6 +829,17 @@ __bl_argparse_load() {
 		__bl_argparse_doc_argument_descriptions+=( "${description}" )
 
 		[[ "${#name}" -gt __bl_argparse_doc_argument_max_size ]] && __bl_argparse_doc_argument_max_size="${#name}" || true
+	}
+
+	__bl_argparse_doc_add_example() {
+		local code
+		local description
+
+		code="${1}"
+		description="${2:-}"
+
+		__bl_argparse_doc_examples_code+=( "${code}" )
+		__bl_argparse_examples_description+=( "${description}" )
 	}
 
 	###############################################################################
@@ -899,7 +910,7 @@ __bl_argparse_init() {
 	# Program documentation
 	declare -g -a __bl_argparse_doc_description=()
 	declare -g -a __bl_argparse_doc_examples_code=()
-	declare -g -a __bl_argparse_doc_examples_text=()
+	declare -g -a __bl_argparse_examples_description=()
 	declare -g -a __bl_argparse_doc_examples=()
 	declare -g -a __bl_argparse_doc_section_descriptions=()
 	declare -g -a __bl_argparse_doc_section_first_arg=()

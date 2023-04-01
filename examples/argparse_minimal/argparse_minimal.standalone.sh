@@ -147,7 +147,6 @@ __bl_constants_init ()
 __bl_argparse () 
 { 
     local -i last_tree_index;
-    shift;
     __bl_argparse_input_tokens=("${@}");
     if [[ -n "${__bl_argparse_arguments_definition}" ]]; then
         __bl_argparse_arguments_definition="(${__bl_argparse_arguments_definition} | :parameter:help:h:help:)";
@@ -161,7 +160,7 @@ __bl_argparse ()
     __bl_argparse_build_tree_expressions;
     last_tree_index="${#__bl_argparse_tree_expressions[@]}-1";
     if __bl_argparse_compare_expr_with_input_tokens 1 "${__bl_argparse_tree_expressions_type[last_tree_index]}" "${__bl_argparse_tree_expressions[last_tree_index]}" 0; then
-        if [[ "${__bl_argparse_values[help]}" == "set" ]]; then
+        if [[ "${__bl_argparse_values[help]:-}" == "set" ]]; then
             __bl_argparse_show_help;
             exit 0;
         else
@@ -310,6 +309,16 @@ __bl_argparse_compare_expr_with_input_tokens ()
     esac
 }
 
+__bl_argparse_doc_add_example () 
+{ 
+    local code;
+    local description;
+    code="${1}";
+    description="${2:-}";
+    __bl_argparse_doc_examples_code+=("${code}");
+    __bl_argparse_examples_description+=("${description}")
+}
+
 __bl_argparse_doc_add_parameter () 
 { 
     local name;
@@ -404,7 +413,7 @@ __bl_argparse_init ()
     declare -g -a __bl_argparse_remaining;
     declare -g -a __bl_argparse_doc_description=();
     declare -g -a __bl_argparse_doc_examples_code=();
-    declare -g -a __bl_argparse_doc_examples_text=();
+    declare -g -a __bl_argparse_examples_description=();
     declare -g -a __bl_argparse_doc_examples=();
     declare -g -a __bl_argparse_doc_section_descriptions=();
     declare -g -a __bl_argparse_doc_section_first_arg=();
@@ -611,6 +620,7 @@ __bl_argparse_show_help ()
     local -i arguments_index_end;
     local -i next_section_id;
     local -i i;
+    local dot;
     __bl_echo_color "${__bl_argparse_color_header}" "Usage:";
     __bl_argparse_tree_to_string color;
     echo;
@@ -623,11 +633,12 @@ __bl_argparse_show_help ()
             [[ section_id -gt 0 ]] && echo;
             __bl_printf_color "${__bl_argparse_color_name}" "  ${__bl_argparse_doc_section_names[section_id]}";
             if [[ -n "${__bl_argparse_doc_section_descriptions[section_id]}" ]]; then
+                [[ "${__bl_argparse_doc_section_descriptions[section_id]: -1}" == "." ]] && dot="" || dot=".";
                 __bl_color;
-                printf ": %s.\n" "${__bl_argparse_doc_section_descriptions[section_id]}";
+                printf ": %s\n" "${__bl_argparse_doc_section_descriptions[section_id]}${dot}";
             else
                 __bl_color;
-                printf "%s.\n" "";
+                printf ":\n" "";
             fi;
             arguments_index_start="${__bl_argparse_doc_section_first_arg[section_id]}";
             if [[ "${section_id}" -eq "${#__bl_argparse_doc_section_names[@]}-1" ]]; then
@@ -654,7 +665,8 @@ __bl_argparse_show_help ()
         do
             __bl_printf_color "${__bl_argparse_color_name}" "  $ ${__bl_argparse_doc_examples_code[i]}";
             __bl_color;
-            echo ": ${__bl_argparse_doc_examples_text[i]}.";
+            [[ "${__bl_argparse_examples_description[i]: -1}" == "." ]] && dot="" || dot=".";
+            echo ": ${__bl_argparse_examples_description[i]}${dot}";
         done;
     fi
 }
