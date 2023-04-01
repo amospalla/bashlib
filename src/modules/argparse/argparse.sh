@@ -725,24 +725,24 @@ __bl_argparse_load() {
 		local -i arguments_index_end
 		local -i next_section_id
 		local -i i
+		local dot
 
 		__bl_echo_color "${__bl_argparse_color_header}" "Usage:"
-		# echo
 		__bl_argparse_tree_to_string color
 		echo
 
 		__bl_echo_color "${__bl_argparse_color_header}" "Parameters:"
 		if [[ "${#__bl_argparse_doc_section_names[@]}" -eq 1 ]]; then
-			# echo
 			__bl_argparse_print_parameters 0 0 "${#__bl_argparse_doc_argument_names[@]}-1"
 		else
 			for (( section_id=0; section_id<${#__bl_argparse_doc_section_names[@]}; section_id++ )); do
 				[[ section_id -gt 0 ]] && echo
 				__bl_printf_color "${__bl_argparse_color_name}" "  ${__bl_argparse_doc_section_names[section_id]}"
 				if [[ -n "${__bl_argparse_doc_section_descriptions[section_id]}" ]]; then
-					__bl_color; printf ": %s.\n" "${__bl_argparse_doc_section_descriptions[section_id]}"
+					[[ "${__bl_argparse_doc_section_descriptions[section_id]: -1}" == "." ]] && dot="" || dot="."
+					__bl_color; printf ": %s\n" "${__bl_argparse_doc_section_descriptions[section_id]}${dot}"
 				else
-					__bl_color; printf "%s.\n" ""
+					__bl_color; printf ":\n" ""
 				fi
 
 				arguments_index_start="${__bl_argparse_doc_section_first_arg[section_id]}"
@@ -774,7 +774,9 @@ __bl_argparse_load() {
 			for (( i=0; i<${#__bl_argparse_doc_examples_code[@]}; i++ )); do
 				__bl_printf_color "${__bl_argparse_color_name}" "  $ ${__bl_argparse_doc_examples_code[i]}"
 				__bl_color
-				echo ": ${__bl_argparse_doc_examples_text[i]}."
+
+				[[ "${__bl_argparse_doc_examples_text[i]: -1}" == "." ]] && dot="" || dot="."
+				echo ": ${__bl_argparse_doc_examples_text[i]}${dot}"
 			done
 		fi
 	}
