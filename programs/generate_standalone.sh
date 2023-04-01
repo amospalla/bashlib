@@ -14,7 +14,7 @@ main(){
 			program_name="${program_name##*/}"
 			# With __bl_generate_standalone_filename set, the program doesn't actually run, but only generate
 			# a standalone version of itself in the path specified by this variable.
-			export __bl_generate_standalone_filename="${mypath}/${program_name}/${program_name}.standalone.sh"
+			export __bl_generate_standalone_filename="${mypath}/${program_name}/${program_name}"
 			"${mypath}/${program_name}/${program_name}.sh"
 		fi
 	done
