@@ -136,18 +136,18 @@ __bl_test_git_like9() {
 }
 
 main() {
-	local __bl_argparse_arguments_definition
 	local -a input_tokens
 	local expected_tree_text
 	local obtained_tree_text
 	local -i inverse
 	local -i failed
 	local -i exit_code=0
+	local debug=1
 
 	for test in $(declare -F | grep -E "^declare -f __bl_test_.*$" | sed "s/^declare -f //" | sort -g || true); do
+		__bl_argparse_init
 		expected_tree_text=""
 		inverse=0
-		__bl_argparse_arguments_definition=""
 
 		# Load test
 		"${test}"
@@ -202,12 +202,19 @@ main() {
 		if [[ "${failed}" -eq 0 && "${inverse}" -eq 0 ]]; then
 			obtained_tree_text="$(__bl_argparse_tree_to_string)"
 			if [[ "${expected_tree_text}" != "${obtained_tree_text}" ]]; then
-			__bl_echo_color boldred "test ${test} output text not equal to expected:"
+				echo
+				__bl_echo_color boldred "test ${test} output text not equal to expected:"
 				__bl_echo_color blue "expected text:"
 				echo "${expected_tree_text}"
 				__bl_echo_color blue "obtained text:"
 				echo "${obtained_tree_text}"
 			fi
+		elif [[ "${debug}" -eq 1 ]]; then
+			echo
+			__bl_echo_color blue "expected text:"
+			echo "${expected_tree_text}"
+			__bl_echo_color blue "obtained text:"
+			echo "${obtained_tree_text}"
 		fi
 		if [[ failed -ne 0 ]]; then
 			exit_code=1

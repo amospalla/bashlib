@@ -26,9 +26,9 @@ parse_arguments() {
 
 	# String of arguments definition.
 	# Note: argparse injects :parameter:help:help:.
-	__bl_argparse_arguments_definition+=":literal:mode:add: [:parameter:verbose:v:verbose:] (:parameter:all:a:all: | :remaining:files:)"
-	__bl_argparse_arguments_definition+=" | "
-	__bl_argparse_arguments_definition+=":literal:mode:commit: [:parameter:verbose:v:verbose:] :parameter:param_message:m:message: :variable:message:str:"
+	__bl_argparse_add_arguments_definition ":literal:mode:add: [:parameter:verbose:v:verbose:] (:parameter:all:a:all: | :remaining:files:)"
+	__bl_argparse_add_arguments_definition " | "
+	__bl_argparse_add_arguments_definition ":literal:mode:commit: [:parameter:verbose:v:verbose:] :parameter:param_message:m:message: :variable:message:str:"
 
 	# Documentation: Parameters.
 	__bl_argparse_doc_add_section "add" "adds files to stage area"
@@ -50,7 +50,7 @@ parse_arguments() {
 		"${__bl_argparse_program_name} commit -m \"some message\"" \
 		"commit the changes in the staged area"
 
-	__bl_argparse "${__bl_argparse_arguments_definition}" "${@}"
+	__bl_argparse "${@}"
 }
 
 main() {

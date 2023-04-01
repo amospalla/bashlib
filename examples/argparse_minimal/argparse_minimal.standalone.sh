@@ -174,6 +174,11 @@ __bl_argparse ()
     fi
 }
 
+__bl_argparse_add_arguments_definition () 
+{ 
+    __bl_argparse_arguments_definition+="${1}"
+}
+
 __bl_argparse_add_expression_to_tree () 
 { 
     local token;
@@ -402,20 +407,20 @@ __bl_argparse_get_primitive_tokens ()
 
 __bl_argparse_init () 
 { 
-    declare -g __bl_argparse_program_name;
-    declare -g __bl_argparse_arguments_definition;
-    declare -g -a __bl_argparse_result_name;
-    declare -g -a __bl_argparse_result_datatype;
-    declare -g -a __bl_argparse_result_choices;
-    declare -g -a __bl_argparse_result_short;
-    declare -g -a __bl_argparse_result_long;
-    declare -g -a __bl_argparse_result_type;
-    declare -g -a __bl_argparse_result_value;
-    declare -g -a __bl_argparse_tree_expressions;
-    declare -g -a __bl_argparse_tree_expressions_type;
-    declare -g -a __bl_argparse_input_tokens;
-    declare -g -A __bl_argparse_values;
-    declare -g -a __bl_argparse_remaining;
+    declare -g __bl_argparse_program_name="";
+    declare -g __bl_argparse_arguments_definition="";
+    declare -g -a __bl_argparse_result_name=();
+    declare -g -a __bl_argparse_result_datatype=();
+    declare -g -a __bl_argparse_result_choices=();
+    declare -g -a __bl_argparse_result_short=();
+    declare -g -a __bl_argparse_result_long=();
+    declare -g -a __bl_argparse_result_type=();
+    declare -g -a __bl_argparse_result_value=();
+    declare -g -a __bl_argparse_tree_expressions=();
+    declare -g -a __bl_argparse_tree_expressions_type=();
+    declare -g -a __bl_argparse_input_tokens=();
+    declare -g -A __bl_argparse_values=();
+    declare -g -a __bl_argparse_remaining=();
     declare -g -a __bl_argparse_doc_description=();
     declare -g -a __bl_argparse_doc_examples_code=();
     declare -g -a __bl_argparse_examples_description=();
@@ -823,7 +828,7 @@ __bl_argparse_tree_to_string_real ()
             fi;
             if [[ "${use_color}" -eq 1 ]]; then
                 printf "%s" "  ";
-                if [[ -n "${__bl_argparse_program_name:-}" ]]; then
+                if [[ -n "${__bl_argparse_program_name}" ]]; then
                     __bl_printf_color "${__bl_argparse_color_program_name}" "${__bl_argparse_program_name}";
                 else
                     __bl_printf_color "${__bl_argparse_color_program_name}" "${__bl_program_name}";
