@@ -360,7 +360,7 @@ __bl_argparse_load() {
 	__bl_argparse_build_tree_expressions() {
 		# Given the initial text expression, reduce its simplest expressions until everything gets reduced.
 		# Input is a string representing the expression, inside a sequence group "()".
-		# Keep trying to reduce the expression stored into the variable __bl_arguments_definition.
+		# Keep trying to reduce the expression stored into the variable arguments_definition.
 
 		# Example:
 		# (a b | c d) => (a b | sequence(c,d))
@@ -368,19 +368,19 @@ __bl_argparse_load() {
 		#          => or(sequence(a,b), sequence(c,d))
 
 		# Example:
-		# "a | [b]" is processed into:
+		# __bl_argparse_arguments_definition="a | [b]" is processed into:
 		#
 		# array_id  __bl_argparse_tree_expressions_type  __bl_argparse_tree_expressions
-		# --------  ------------------------  -------------------
-		#    0:                    primitive                  'b'
-		#    1:                     optional                ':0:'
-		#    2:                    primitive                  'a'
-		#    3:                     sequence                ':1:'
-		#    4:                           or            ':2: :3:'
-		#    5:                     sequence                ':4:'
+		# --------  -----------------------------------  ------------------------------
+		#        0                            primitive                             'b'
+		#        1                             optional                           ':0:'
+		#        2                            primitive                             'a'
+		#        3                             sequence                           ':1:'
+		#        4                                   or                       ':2: :3:'
+		#        5                             sequence                           ':4:'
 
-		local __bl_arguments_definition
-		__bl_arguments_definition="${1}"
+		local arguments_definition
+		arguments_definition="${__bl_argparse_arguments_definition}"
 
 		__bl_argparse_tree_expressions=()
 		__bl_argparse_tree_expressions_type=()
@@ -399,7 +399,7 @@ __bl_argparse_load() {
 	}
 
 	__bl_argparse_reduce_grouped_expression() {
-		# Try to reduce the definition in the variable __bl_arguments_definition.
+		# Try to reduce the definition in the variable arguments_definition.
 		# If an ungrouped expression is found (a group without any nested group inside):
 		#     (1) Add to __bl_argparse_tree_expressions and __bl_argparse_tree_expressions_type references to the
 		#         inner contents.
@@ -417,7 +417,7 @@ __bl_argparse_load() {
 		close_symbol="${3}"     # ")" or "]"
 
 		# If there is any simple group expression (without any nested group) reduce it.
-		if [[ "${__bl_arguments_definition}" =~ (.*)("${open_symbol}")([^][()]+)(" "*"${close_symbol}")(.*) ]]; then
+		if [[ "${arguments_definition}" =~ (.*)("${open_symbol}")([^][()]+)(" "*"${close_symbol}")(.*) ]]; then
 			# Example: expression="a b [c] d":
 			#     Sets __bl_argparse_tree_expressions_type+=("optional")
 			#     Sets expressions+=("a b :0: d")  # given that next array index is 0
@@ -444,15 +444,15 @@ __bl_argparse_load() {
 			# Add reference to the latest expression added by __bl_argparse_reduce_ungrouped_expression
 			__bl_argparse_tree_expressions+=( ":$(( ${#__bl_argparse_tree_expressions[@]} - 1 )):" )
 			# Replace grouped expression by a reference to the expressions tree.
-			__bl_arguments_definition="${prefix}:$(( ${#__bl_argparse_tree_expressions[@]} - 1 )):${postfix}"
+			arguments_definition="${prefix}:$(( ${#__bl_argparse_tree_expressions[@]} - 1 )):${postfix}"
 		else
 			return 1
 		fi
 	}
 
 	__bl_argparse_reduce_ungrouped_expression() {
-		# Read ungrouped expression and add to the expressions tree its tokens.
-		# Input examples: "a", a | b", "a b c"
+		# Read expression without groups and add its tokens to the expressions tree.
+		# Input examples: "a", "a | b", "a b c"
 
 		local -a tokens
 		local expression_new
@@ -833,35 +833,28 @@ __bl_argparse_load() {
 	## Main #######################################################################
 	###############################################################################
 	__bl_argparse() {
-		local input_expression
+		# Arguments:
+		#     __bl_argparse_input_tokens(list): user input tokens.
 		local -i last_tree_index
-		# local -i show_help=1
-
-		# [[ "${1}" == "no_help" ]] && show_help=0 && shift  # Used on tests where we don't want help to be shown.
-		input_expression="${1}"
-		# Add help section
-		if [[ "${input_expression}" ]]; then
-			input_expression="(${input_expression} | :parameter:help:h:help:)"
-			__bl_argparse_doc_add_section "Help"
-			__bl_argparse_doc_add_parameter "-h|--help"    "show program help and exit"
-		else
-			input_expression="([:parameter:help:h:help:])"
-			__bl_argparse_doc_add_section "Help"
-			__bl_argparse_doc_add_parameter "-h|--help"    "show program help and exit"
-		fi
 
 		shift
 		__bl_argparse_input_tokens=( "${@}" )
 
-		# Build the expressions tree for the give input_expression string
-		__bl_argparse_build_tree_expressions "${input_expression}"
+		# Add help section
+		if [[ "${__bl_argparse_arguments_definition}" ]]; then
+			__bl_argparse_arguments_definition="(${__bl_argparse_arguments_definition} | :parameter:help:h:help:)"
+			__bl_argparse_doc_add_section "Help"
+			__bl_argparse_doc_add_parameter "-h|--help"    "show program help and exit"
+		else
+			__bl_argparse_arguments_definition="([:parameter:help:h:help:])"
+			__bl_argparse_doc_add_section "Help"
+			__bl_argparse_doc_add_parameter "-h|--help"    "show program help and exit"
+		fi
+
+		# Build the expressions tree for the given arguments definition string
+		__bl_argparse_build_tree_expressions
 		# Get last element index for the array
 		last_tree_index="${#__bl_argparse_tree_expressions[@]}-1"
-
-		if [[ "${#}" -eq 1 && "${1:-}" =~ ^(-h|--help)$ ]]; then
-			__bl_argparse_show_help
-			exit 0
-		fi
 
 		# Check if the input tokens are valid for the input expression and store its values
 		if __bl_argparse_compare_expr_with_input_tokens \
@@ -870,7 +863,13 @@ __bl_argparse_load() {
 			"${__bl_argparse_tree_expressions[last_tree_index]}" \
 			0
 		then
-			true
+			if [[ "${__bl_argparse_values[help]}" == "set" ]]; then
+				__bl_argparse_show_help
+				exit 0
+			else
+				# Calling program execution continues here.
+				true
+			fi
 		else
 			__bl_echo_color red "Invalid input tokens."
 			echo
@@ -883,6 +882,7 @@ __bl_argparse_load() {
 
 __bl_argparse_init() {
 	declare -g __bl_argparse_program_name
+	declare -g __bl_argparse_arguments_definition  # String with the arguments definition: "(a | b [c])"
 	declare -g -a __bl_argparse_result_name
 	declare -g -a __bl_argparse_result_datatype
 	declare -g -a __bl_argparse_result_choices
