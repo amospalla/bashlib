@@ -864,7 +864,7 @@ __bl_argparse_load() {
 			"${__bl_argparse_tree_expressions[last_tree_index]}" \
 			0
 		then
-			if [[ "${__bl_argparse_values[help]}" == "set" ]]; then
+			if [[ "${__bl_argparse_values[help]:-}" == "set" ]]; then
 				__bl_argparse_show_help
 				exit 0
 			else
