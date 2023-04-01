@@ -613,6 +613,11 @@ __bl_argparse_result_reindex ()
     __bl_argparse_result_value=("${__bl_argparse_result_value[@]}")
 }
 
+__bl_argparse_set_program_name () 
+{ 
+    __bl_argparse_program_name="${1}"
+}
+
 __bl_argparse_show_help () 
 { 
     local -i section_id;
