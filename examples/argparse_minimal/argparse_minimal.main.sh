@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 main() {
-	__bl_argparse "" "${@}"
+	__bl_argparse "${@}"
 	__bl_echo_color green "argparser succeeded, we executed the program without any parameter."
 }
 
