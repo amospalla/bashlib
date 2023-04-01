@@ -309,6 +309,11 @@ __bl_argparse_compare_expr_with_input_tokens ()
     esac
 }
 
+__bl_argparse_doc_add_description () 
+{ 
+    __bl_argparse_doc_description+=("${1}")
+}
+
 __bl_argparse_doc_add_example () 
 { 
     local code;

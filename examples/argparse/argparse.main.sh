@@ -20,7 +20,9 @@ parse_arguments() {
 	__bl_argparse_set_program_name "git"
 
 	# Program description, array of paragraphs
-	__bl_argparse_doc_description+=( "I am a program description paragraph." "I am another paragraph." )
+	__bl_argparse_doc_add_description "I am a program description paragraph."
+	__bl_argparse_doc_add_description "  - foo."
+	__bl_argparse_doc_add_description "  - bar."
 
 	# String of arguments definition.
 	# Note: argparse injects :parameter:help:help:.
