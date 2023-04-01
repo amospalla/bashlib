@@ -43,7 +43,6 @@ main() {
 		echo "Execute: bash ${mypath}/${test}/${test}.standalone.sh"
 		bash "${mypath}/${test}/${test}.standalone.sh"
 	done
-
 }
 
 main "${@}"

@@ -16,82 +16,82 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __bl_test_empty_input() {
-	argparse_defs=""
+	# __bl_argparse_arguments_definition=""
 	input_tokens=()
 }
 
 __bl_test_empty_input_error() {
 	inverse=1
-	argparse_defs=""
+	# __bl_argparse_arguments_definition=""
 	input_tokens=( "a" )
 }
 
 __bl_test_empty_input_error2() {
 	inverse=1
-	argparse_defs=":literal:a:a:"
+	__bl_argparse_arguments_definition=":literal:a:a:"
 	input_tokens=()
 }
 
 __bl_test_literal() {
-	argparse_defs=":literal:a:a:"
+	__bl_argparse_arguments_definition=":literal:a:a:"
 	input_tokens=( "a" )
 	expected_tree_text="${__bl_program_name} a"
 }
 
 __bl_test_literal_fail() {
 	inverse=1
-	argparse_defs=":literal:a:a:"
+	__bl_argparse_arguments_definition=":literal:a:a:"
 	input_tokens=( "b" )
 }
 
 __bl_test_parameter() {
-	argparse_defs=":parameter:a:short:large:"
+	__bl_argparse_arguments_definition=":parameter:a:short:large:"
 	input_tokens=( "-short" )
 	expected_tree_text="${__bl_program_name} -short|--large"
 }
 
 __bl_test_variable() {
-	argparse_defs=":variable:a:"
+	__bl_argparse_arguments_definition=":variable:a:"
 	input_tokens=( "random value" )
 	expected_tree_text="${__bl_program_name} {a}"
 }
 
 __bl_test_variable_csv_1() {
-	argparse_defs=":variable:myvar::a,b,c:"
+	__bl_argparse_arguments_definition=":variable:myvar::a,b,c:"
 	input_tokens=( "a" )
 	expected_tree_text="${__bl_program_name} {myvar}"
 }
 
 __bl_test_variable_csv_2() {
-	argparse_defs=":variable:myvar::a,b,c:"
+	__bl_argparse_arguments_definition=":variable:myvar::a,b,c:"
 	input_tokens=( "c" )
 	expected_tree_text="${__bl_program_name} {myvar}"
 }
 
 __bl_test_variable_csv_3() {
 	inverse=1
-	argparse_defs=":variable:myvar::a,b,c:"
+	__bl_argparse_arguments_definition=":variable:myvar::a,b,c:"
 	input_tokens=( "d" )
 	expected_tree_text="${__bl_program_name} {myvar}"
 }
 
 __bl_test_variable_int() {
-	argparse_defs=":variable:myvar:int:"
+	__bl_argparse_arguments_definition=":variable:myvar:int:"
 	input_tokens=( "1" )
 	expected_tree_text="${__bl_program_name} {myvar}"
 }
 
 __bl_test_variable_int_str() {
 	inverse=1
-	argparse_defs=":variable:myvar:int:"
+	__bl_argparse_arguments_definition=":variable:myvar:int:"
 	input_tokens=( "a" )
 	expected_tree_text="${__bl_program_name} {myvar}"
 }
 
 data1() {
-	argparse_defs+=":literal:mode:add: [:parameter:verbose:v:verbose:] (:parameter:add_all:a:all: | :remaining:files:)"
-	argparse_defs+=" | "
-	argparse_defs+=":literal:mode:commit: [:parameter:verbose:v:verbose:] :parameter:p_commit_message:m:message: :variable:commit_message:str:"
+	__bl_argparse_arguments_definition+=":literal:mode:add: [:parameter:verbose:v:verbose:] (:parameter:add_all:a:all: | :remaining:files:)"
+	__bl_argparse_arguments_definition+=" | "
+	__bl_argparse_arguments_definition+=":literal:mode:commit: [:parameter:verbose:v:verbose:] :parameter:p_commit_message:m:message: :variable:commit_message:str:"
 
 	printf -v expected_tree_text "%s"                             "${__bl_program_name} add [-v|--verbose] (-a|--all | {files...})"
 	printf -v expected_tree_text "%s\n%s" "${expected_tree_text}" "${__bl_program_name} commit [-v|--verbose] -m|--message {commit_message}"
@@ -136,7 +136,7 @@ __bl_test_git_like9() {
 }
 
 main() {
-	local argparse_defs
+	local __bl_argparse_arguments_definition
 	local -a input_tokens
 	local expected_tree_text
 	local obtained_tree_text
@@ -147,7 +147,7 @@ main() {
 	for test in $(declare -F | grep -E "^declare -f __bl_test_.*$" | sed "s/^declare -f //" | sort -g || true); do
 		expected_tree_text=""
 		inverse=0
-		argparse_defs=""
+		__bl_argparse_arguments_definition=""
 
 		# Load test
 		"${test}"
@@ -160,18 +160,19 @@ main() {
 
 		__bl_argparse_input_tokens=( "${input_tokens[@]}" )
 
-		# Add help section
-		if [[ "${argparse_defs}" ]]; then
-			argparse_defs="(${argparse_defs} | :parameter:help:h:help:)"
+		# Add help section. This setion is copied as-is from source because we are not executing the library
+		# main function, but parts of it.
+		if [[ "${__bl_argparse_arguments_definition}" ]]; then
+			__bl_argparse_arguments_definition="(${__bl_argparse_arguments_definition} | :parameter:help:h:help:)"
 			__bl_argparse_doc_add_section "Help"
 			__bl_argparse_doc_add_parameter "-h|--help"    "show program help and exit"
 		else
-			argparse_defs="([:parameter:help:h:help:])"
+			__bl_argparse_arguments_definition="([:parameter:help:h:help:])"
 			__bl_argparse_doc_add_section "Help"
 			__bl_argparse_doc_add_parameter "-h|--help"    "show program help and exit"
 		fi
 
-		__bl_argparse_build_tree_expressions "${argparse_defs}"
+		__bl_argparse_build_tree_expressions
 		last_tree_index="${#__bl_argparse_tree_expressions[@]}-1"
 
 		# Check if the input tokens are valid for the input expression and store its values

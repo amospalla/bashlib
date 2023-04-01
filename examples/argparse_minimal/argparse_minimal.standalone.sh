@@ -20,6 +20,121 @@ __bl_get_main_paths ()
 
 # Bashlib Modules:
 
+__bl_echo_color () 
+{ 
+    __bl_printf_or_echo_color echo "${@}"
+}
+
+__bl_trap_error_init () 
+{ 
+    trap '__bl_trap_error_on_error $? 1' ERR SIGHUP SIGTERM;
+    trap '__bl_trap_error_on_int   $?' SIGINT
+}
+
+__bl_trap_error_on_error () 
+{ 
+    local -i ec;
+    local -i show_line;
+    local lines;
+    ec="${1}";
+    show_line="${2}";
+    __bl_log critical "Exit code: ${ec}.";
+    if [[ "${show_line}" -eq 1 ]]; then
+        lines="Trace of errors produced on function(line):";
+        for ((i=${#BASH_LINENO[@]}-2; i>=0; i-- ))
+        do
+            lines+=" ${FUNCNAME[i]}(${BASH_LINENO[i]})";
+        done;
+        __bl_log critical "${lines}";
+        if [[ __bl_sourced -eq 0 ]]; then
+            __bl_trap_error_print_line "${BASH_LINENO[0]}";
+        fi;
+    fi;
+    exit "${ec}"
+}
+
+__bl_trap_error_on_int () 
+{ 
+    local -i ec;
+    ec="${1}";
+    __bl_log critical "User requested program termination.";
+    __bl_trap_error_on_error "${ec}" 0
+}
+
+__bl_trap_error_print_line () 
+{ 
+    local -a text_array;
+    local -i line i surrounding_lines;
+    local arrow;
+    surrounding_lines=6;
+    line="${1}";
+    readarray -t text_array < "${__bl_program_path}/${__bl_program_name}";
+    for ((i=line-1-surrounding_lines; i<line+surrounding_lines; i++))
+    do
+        [[ i -ge 0 ]] || continue;
+        [[ i -lt ${#text_array[@]} ]] || continue;
+        [[ "${i}"+1 -eq "${line}" ]] && arrow=">>" || arrow="  ";
+        __bl_log critical "${__bl_program_name}($(( i+1 ))):${arrow}${text_array[i]}";
+    done
+}
+
+__bl_printf_color () 
+{ 
+    __bl_printf_or_echo_color printf "${@}"
+}
+
+__bl_printf_or_echo_color () 
+{ 
+    local mode;
+    local force;
+    local color;
+    mode="${1}";
+    shift;
+    if [[ "${1:-}" == '-f' ]]; then
+        shift;
+        force="-f";
+    fi;
+    color="${1}";
+    shift;
+    __bl_color ${force:-} "${color}";
+    "${mode}" "${@}";
+    __bl_color
+}
+
+__bl_log () 
+{ 
+    local level;
+    level="${1}";
+    shift;
+    if [[ "${__bl_log_levels[${level}]}" -ge "${__bl_log_level}" ]]; then
+        case "${level}" in 
+            debug)
+                __bl_echo_color cyan "[${level}] ${*}"
+            ;;
+            info)
+                __bl_echo_color green "[${level}] ${*}"
+            ;;
+            warning)
+                __bl_echo_color yellow "[${level}] ${*}"
+            ;;
+            error)
+                __bl_echo_color magenta "[${level}] ${*}"
+            ;;
+            critical)
+                __bl_echo_color red "[${level}] ${*}"
+            ;;
+        esac;
+    fi
+}
+
+__bl_log_init () 
+{ 
+    declare -g -A __bl_log_levels;
+    declare -g -i __bl_log_level;
+    __bl_log_levels=([debug]="0" [info]="1" [warning]="2" [error]="3" [critical]="4");
+    __bl_log_level="2"
+}
+
 __bl_constants_init () 
 { 
     local temp;
@@ -29,40 +144,29 @@ __bl_constants_init ()
     declare -g __bl_character_newline="${temp}"
 }
 
-__bl_echo_color () 
-{ 
-    __bl_printf_or_echo_color echo "${@}"
-}
-
-__bl_printf_color () 
-{ 
-    __bl_printf_or_echo_color printf "${@}"
-}
-
 __bl_argparse () 
 { 
-    local input_expression;
     local -i last_tree_index;
-    input_expression="${1}";
-    if [[ -n "${input_expression}" ]]; then
-        input_expression="(${input_expression} | :parameter:help:h:help:)";
+    shift;
+    __bl_argparse_input_tokens=("${@}");
+    if [[ -n "${__bl_argparse_arguments_definition}" ]]; then
+        __bl_argparse_arguments_definition="(${__bl_argparse_arguments_definition} | :parameter:help:h:help:)";
         __bl_argparse_doc_add_section "Help";
         __bl_argparse_doc_add_parameter "-h|--help" "show program help and exit";
     else
-        input_expression="([:parameter:help:h:help:])";
+        __bl_argparse_arguments_definition="([:parameter:help:h:help:])";
         __bl_argparse_doc_add_section "Help";
         __bl_argparse_doc_add_parameter "-h|--help" "show program help and exit";
     fi;
-    shift;
-    __bl_argparse_input_tokens=("${@}");
-    __bl_argparse_build_tree_expressions "${input_expression}";
+    __bl_argparse_build_tree_expressions;
     last_tree_index="${#__bl_argparse_tree_expressions[@]}-1";
-    if [[ "${#}" -eq 1 && "${1:-}" =~ ^(-h|--help)$ ]]; then
-        __bl_argparse_show_help;
-        exit 0;
-    fi;
     if __bl_argparse_compare_expr_with_input_tokens 1 "${__bl_argparse_tree_expressions_type[last_tree_index]}" "${__bl_argparse_tree_expressions[last_tree_index]}" 0; then
-        true;
+        if [[ "${__bl_argparse_values[help]}" == "set" ]]; then
+            __bl_argparse_show_help;
+            exit 0;
+        else
+            true;
+        fi;
     else
         __bl_echo_color red "Invalid input tokens.";
         echo;
@@ -99,8 +203,8 @@ __bl_argparse_add_result ()
 
 __bl_argparse_build_tree_expressions () 
 { 
-    local __bl_arguments_definition;
-    __bl_arguments_definition="${1}";
+    local arguments_definition;
+    arguments_definition="${__bl_argparse_arguments_definition}";
     __bl_argparse_tree_expressions=();
     __bl_argparse_tree_expressions_type=();
     while true; do
@@ -285,6 +389,7 @@ __bl_argparse_get_primitive_tokens ()
 __bl_argparse_init () 
 { 
     declare -g __bl_argparse_program_name;
+    declare -g __bl_argparse_arguments_definition;
     declare -g -a __bl_argparse_result_name;
     declare -g -a __bl_argparse_result_datatype;
     declare -g -a __bl_argparse_result_choices;
@@ -432,14 +537,14 @@ __bl_argparse_reduce_grouped_expression ()
     group_type="${1}";
     open_symbol="${2}";
     close_symbol="${3}";
-    if [[ "${__bl_arguments_definition}" =~ (.*)("${open_symbol}")([^][()]+)(" "*"${close_symbol}")(.*) ]]; then
+    if [[ "${arguments_definition}" =~ (.*)("${open_symbol}")([^][()]+)(" "*"${close_symbol}")(.*) ]]; then
         prefix="${BASH_REMATCH[1]}";
         simple_group_expression="${BASH_REMATCH[3]}";
         postfix="${BASH_REMATCH[5]}";
         __bl_argparse_reduce_ungrouped_expression "${simple_group_expression}";
         __bl_argparse_tree_expressions_type+=("${group_type}");
         __bl_argparse_tree_expressions+=(":$(( ${#__bl_argparse_tree_expressions[@]} - 1 )):");
-        __bl_arguments_definition="${prefix}:$(( ${#__bl_argparse_tree_expressions[@]} - 1 )):${postfix}";
+        arguments_definition="${prefix}:$(( ${#__bl_argparse_tree_expressions[@]} - 1 )):${postfix}";
     else
         return 1;
     fi
@@ -784,111 +889,6 @@ __bl_color_raw ()
     printf -v __bl_return "%s" "\e[${mode};${number}m"
 }
 
-__bl_trap_error_init () 
-{ 
-    trap '__bl_trap_error_on_error $? 1' ERR SIGHUP SIGTERM;
-    trap '__bl_trap_error_on_int   $?' SIGINT
-}
-
-__bl_trap_error_on_error () 
-{ 
-    local -i ec;
-    local -i show_line;
-    local lines;
-    ec="${1}";
-    show_line="${2}";
-    __bl_log critical "Exit code: ${ec}.";
-    if [[ "${show_line}" -eq 1 ]]; then
-        lines="Trace of errors produced on function(line):";
-        for ((i=${#BASH_LINENO[@]}-2; i>=0; i-- ))
-        do
-            lines+=" ${FUNCNAME[i]}(${BASH_LINENO[i]})";
-        done;
-        __bl_log critical "${lines}";
-        if [[ __bl_sourced -eq 0 ]]; then
-            __bl_trap_error_print_line "${BASH_LINENO[0]}";
-        fi;
-    fi;
-    exit "${ec}"
-}
-
-__bl_trap_error_on_int () 
-{ 
-    local -i ec;
-    ec="${1}";
-    __bl_log critical "User requested program termination.";
-    __bl_trap_error_on_error "${ec}" 0
-}
-
-__bl_trap_error_print_line () 
-{ 
-    local -a text_array;
-    local -i line i surrounding_lines;
-    local arrow;
-    surrounding_lines=6;
-    line="${1}";
-    readarray -t text_array < "${__bl_program_path}/${__bl_program_name}";
-    for ((i=line-1-surrounding_lines; i<line+surrounding_lines; i++))
-    do
-        [[ i -ge 0 ]] || continue;
-        [[ i -lt ${#text_array[@]} ]] || continue;
-        [[ "${i}"+1 -eq "${line}" ]] && arrow=">>" || arrow="  ";
-        __bl_log critical "${__bl_program_name}($(( i+1 ))):${arrow}${text_array[i]}";
-    done
-}
-
-__bl_log () 
-{ 
-    local level;
-    level="${1}";
-    shift;
-    if [[ "${__bl_log_levels[${level}]}" -ge "${__bl_log_level}" ]]; then
-        case "${level}" in 
-            debug)
-                __bl_echo_color cyan "[${level}] ${*}"
-            ;;
-            info)
-                __bl_echo_color green "[${level}] ${*}"
-            ;;
-            warning)
-                __bl_echo_color yellow "[${level}] ${*}"
-            ;;
-            error)
-                __bl_echo_color magenta "[${level}] ${*}"
-            ;;
-            critical)
-                __bl_echo_color red "[${level}] ${*}"
-            ;;
-        esac;
-    fi
-}
-
-__bl_log_init () 
-{ 
-    declare -g -A __bl_log_levels;
-    declare -g -i __bl_log_level;
-    __bl_log_levels=([debug]="0" [info]="1" [warning]="2" [error]="3" [critical]="4");
-    __bl_log_level="2"
-}
-
-__bl_printf_or_echo_color () 
-{ 
-    local mode;
-    local force;
-    local color;
-    mode="${1}";
-    shift;
-    if [[ "${1:-}" == '-f' ]]; then
-        shift;
-        force="-f";
-    fi;
-    color="${1}";
-    shift;
-    __bl_color ${force:-} "${color}";
-    "${mode}" "${@}";
-    __bl_color
-}
-
 __bl_initialize_common () 
 { 
     declare -g -i __bl_sourced;
@@ -904,14 +904,14 @@ __bl_initialize_common ()
 declare -g -i __bl_sourced=0
 __bl_initialize_common
 # Bashlib modules initialization
-__bl_constants_init
-unset -f '__bl_constants_init'
-__bl_argparse_init
-unset -f '__bl_argparse_init'
 __bl_trap_error_init
 unset -f '__bl_trap_error_init'
 __bl_log_init
 unset -f '__bl_log_init'
+__bl_constants_init
+unset -f '__bl_constants_init'
+__bl_argparse_init
+unset -f '__bl_argparse_init'
 # Bashlib initialization end
 
 # Main program

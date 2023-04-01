@@ -25,6 +25,175 @@ __bl_echo_color ()
     __bl_printf_or_echo_color echo "${@}"
 }
 
+__bl_trap_error_init () 
+{ 
+    trap '__bl_trap_error_on_error $? 1' ERR SIGHUP SIGTERM;
+    trap '__bl_trap_error_on_int   $?' SIGINT
+}
+
+__bl_trap_error_on_error () 
+{ 
+    local -i ec;
+    local -i show_line;
+    local lines;
+    ec="${1}";
+    show_line="${2}";
+    __bl_log critical "Exit code: ${ec}.";
+    if [[ "${show_line}" -eq 1 ]]; then
+        lines="Trace of errors produced on function(line):";
+        for ((i=${#BASH_LINENO[@]}-2; i>=0; i-- ))
+        do
+            lines+=" ${FUNCNAME[i]}(${BASH_LINENO[i]})";
+        done;
+        __bl_log critical "${lines}";
+        if [[ __bl_sourced -eq 0 ]]; then
+            __bl_trap_error_print_line "${BASH_LINENO[0]}";
+        fi;
+    fi;
+    exit "${ec}"
+}
+
+__bl_trap_error_on_int () 
+{ 
+    local -i ec;
+    ec="${1}";
+    __bl_log critical "User requested program termination.";
+    __bl_trap_error_on_error "${ec}" 0
+}
+
+__bl_trap_error_print_line () 
+{ 
+    local -a text_array;
+    local -i line i surrounding_lines;
+    local arrow;
+    surrounding_lines=6;
+    line="${1}";
+    readarray -t text_array < "${__bl_program_path}/${__bl_program_name}";
+    for ((i=line-1-surrounding_lines; i<line+surrounding_lines; i++))
+    do
+        [[ i -ge 0 ]] || continue;
+        [[ i -lt ${#text_array[@]} ]] || continue;
+        [[ "${i}"+1 -eq "${line}" ]] && arrow=">>" || arrow="  ";
+        __bl_log critical "${__bl_program_name}($(( i+1 ))):${arrow}${text_array[i]}";
+    done
+}
+
+__bl_temp_path_get () 
+{ 
+    declare -g __bl_temp_path;
+    if [[ -w "/tmp" ]]; then
+        __bl_temp_path="/tmp/__bl_temp_path.${EUID}";
+    else
+        if [[ -w "/dev/shm" ]]; then
+            __bl_temp_path="/dev/shm/__bl_temp_path.${EUID}";
+        else
+            echo "[error] could not set __bl_temp_path, neither /tmp or /dev/shm are writeable.";
+            return 1;
+        fi;
+    fi;
+    if ! [[ -d "${__bl_temp_path}" ]]; then
+        mkdir -p "${__bl_temp_path}/"{log,pid,data,var};
+        mkfifo -m 700 "${__bl_temp_path}/var/fifo";
+    fi;
+    [[ "${1:-}" == "--quiet" ]] || echo "${__bl_temp_path}"
+}
+
+__bl_printf_or_echo_color () 
+{ 
+    local mode;
+    local force;
+    local color;
+    mode="${1}";
+    shift;
+    if [[ "${1:-}" == '-f' ]]; then
+        shift;
+        force="-f";
+    fi;
+    color="${1}";
+    shift;
+    __bl_color ${force:-} "${color}";
+    "${mode}" "${@}";
+    __bl_color
+}
+
+__bl_log () 
+{ 
+    local level;
+    level="${1}";
+    shift;
+    if [[ "${__bl_log_levels[${level}]}" -ge "${__bl_log_level}" ]]; then
+        case "${level}" in 
+            debug)
+                __bl_echo_color cyan "[${level}] ${*}"
+            ;;
+            info)
+                __bl_echo_color green "[${level}] ${*}"
+            ;;
+            warning)
+                __bl_echo_color yellow "[${level}] ${*}"
+            ;;
+            error)
+                __bl_echo_color magenta "[${level}] ${*}"
+            ;;
+            critical)
+                __bl_echo_color red "[${level}] ${*}"
+            ;;
+        esac;
+    fi
+}
+
+__bl_log_init () 
+{ 
+    declare -g -A __bl_log_levels;
+    declare -g -i __bl_log_level;
+    __bl_log_levels=([debug]="0" [info]="1" [warning]="2" [error]="3" [critical]="4");
+    __bl_log_level="2"
+}
+
+__bl_sleep () 
+{ 
+    local IFS;
+    local time;
+    local seconds;
+    if [[ "${1}" == "inf" ]]; then
+        seconds=0;
+    else
+        time="${1}";
+        case "${time: -1}" in 
+            s)
+                seconds="${time:0: -1}"
+            ;;
+            m)
+                seconds="$(( ${time:0: -1} * 60 ))"
+            ;;
+            h)
+                seconds="$(( ${time:0: -1} * 3600 ))"
+            ;;
+            d)
+                seconds="$(( ${time:0: -1} * 86400 ))"
+            ;;
+            *)
+                seconds="${time}"
+            ;;
+        esac;
+    fi;
+    [[ -n "${_snore_fd:-}" ]] || { 
+        exec {_snore_fd}<> <(:)
+    } 2> /dev/null || { 
+        exec {_snore_fd}<> "${__bashlib_temp_path}/var/fifo"
+    };
+    if [[ "${seconds}" == "0" ]]; then
+        read -u $_snore_fd || :;
+    else
+        read -t "${seconds}" -u $_snore_fd || :;
+    fi
+}
+
+__bl_sleep_init () 
+{ 
+    __bl_temp_path_get --quiet
+}
+
 __bl_color () 
 { 
     if [[ "${1:-None}" == "-f" ]]; then
@@ -96,175 +265,6 @@ __bl_color_raw ()
     printf -v __bl_return "%s" "\e[${mode};${number}m"
 }
 
-__bl_trap_error_init () 
-{ 
-    trap '__bl_trap_error_on_error $? 1' ERR SIGHUP SIGTERM;
-    trap '__bl_trap_error_on_int   $?' SIGINT
-}
-
-__bl_trap_error_on_error () 
-{ 
-    local -i ec;
-    local -i show_line;
-    local lines;
-    ec="${1}";
-    show_line="${2}";
-    __bl_log critical "Exit code: ${ec}.";
-    if [[ "${show_line}" -eq 1 ]]; then
-        lines="Trace of errors produced on function(line):";
-        for ((i=${#BASH_LINENO[@]}-2; i>=0; i-- ))
-        do
-            lines+=" ${FUNCNAME[i]}(${BASH_LINENO[i]})";
-        done;
-        __bl_log critical "${lines}";
-        if [[ __bl_sourced -eq 0 ]]; then
-            __bl_trap_error_print_line "${BASH_LINENO[0]}";
-        fi;
-    fi;
-    exit "${ec}"
-}
-
-__bl_trap_error_on_int () 
-{ 
-    local -i ec;
-    ec="${1}";
-    __bl_log critical "User requested program termination.";
-    __bl_trap_error_on_error "${ec}" 0
-}
-
-__bl_trap_error_print_line () 
-{ 
-    local -a text_array;
-    local -i line i surrounding_lines;
-    local arrow;
-    surrounding_lines=6;
-    line="${1}";
-    readarray -t text_array < "${__bl_program_path}/${__bl_program_name}";
-    for ((i=line-1-surrounding_lines; i<line+surrounding_lines; i++))
-    do
-        [[ i -ge 0 ]] || continue;
-        [[ i -lt ${#text_array[@]} ]] || continue;
-        [[ "${i}"+1 -eq "${line}" ]] && arrow=">>" || arrow="  ";
-        __bl_log critical "${__bl_program_name}($(( i+1 ))):${arrow}${text_array[i]}";
-    done
-}
-
-__bl_sleep () 
-{ 
-    local IFS;
-    local time;
-    local seconds;
-    if [[ "${1}" == "inf" ]]; then
-        seconds=0;
-    else
-        time="${1}";
-        case "${time: -1}" in 
-            s)
-                seconds="${time:0: -1}"
-            ;;
-            m)
-                seconds="$(( ${time:0: -1} * 60 ))"
-            ;;
-            h)
-                seconds="$(( ${time:0: -1} * 3600 ))"
-            ;;
-            d)
-                seconds="$(( ${time:0: -1} * 86400 ))"
-            ;;
-            *)
-                seconds="${time}"
-            ;;
-        esac;
-    fi;
-    [[ -n "${_snore_fd:-}" ]] || { 
-        exec {_snore_fd}<> <(:)
-    } 2> /dev/null || { 
-        exec {_snore_fd}<> "${__bashlib_temp_path}/var/fifo"
-    };
-    if [[ "${seconds}" == "0" ]]; then
-        read -u $_snore_fd || :;
-    else
-        read -t "${seconds}" -u $_snore_fd || :;
-    fi
-}
-
-__bl_sleep_init () 
-{ 
-    __bl_temp_path_get --quiet
-}
-
-__bl_temp_path_get () 
-{ 
-    declare -g __bl_temp_path;
-    if [[ -w "/tmp" ]]; then
-        __bl_temp_path="/tmp/__bl_temp_path.${EUID}";
-    else
-        if [[ -w "/dev/shm" ]]; then
-            __bl_temp_path="/dev/shm/__bl_temp_path.${EUID}";
-        else
-            echo "[error] could not set __bl_temp_path, neither /tmp or /dev/shm are writeable.";
-            return 1;
-        fi;
-    fi;
-    if ! [[ -d "${__bl_temp_path}" ]]; then
-        mkdir -p "${__bl_temp_path}/"{log,pid,data,var};
-        mkfifo -m 700 "${__bl_temp_path}/var/fifo";
-    fi;
-    [[ "${1:-}" == "--quiet" ]] || echo "${__bl_temp_path}"
-}
-
-__bl_log () 
-{ 
-    local level;
-    level="${1}";
-    shift;
-    if [[ "${__bl_log_levels[${level}]}" -ge "${__bl_log_level}" ]]; then
-        case "${level}" in 
-            debug)
-                __bl_echo_color cyan "[${level}] ${*}"
-            ;;
-            info)
-                __bl_echo_color green "[${level}] ${*}"
-            ;;
-            warning)
-                __bl_echo_color yellow "[${level}] ${*}"
-            ;;
-            error)
-                __bl_echo_color magenta "[${level}] ${*}"
-            ;;
-            critical)
-                __bl_echo_color red "[${level}] ${*}"
-            ;;
-        esac;
-    fi
-}
-
-__bl_log_init () 
-{ 
-    declare -g -A __bl_log_levels;
-    declare -g -i __bl_log_level;
-    __bl_log_levels=([debug]="0" [info]="1" [warning]="2" [error]="3" [critical]="4");
-    __bl_log_level="2"
-}
-
-__bl_printf_or_echo_color () 
-{ 
-    local mode;
-    local force;
-    local color;
-    mode="${1}";
-    shift;
-    if [[ "${1:-}" == '-f' ]]; then
-        shift;
-        force="-f";
-    fi;
-    color="${1}";
-    shift;
-    __bl_color ${force:-} "${color}";
-    "${mode}" "${@}";
-    __bl_color
-}
-
 __bl_initialize_common () 
 { 
     declare -g -i __bl_sourced;
@@ -282,10 +282,10 @@ __bl_initialize_common
 # Bashlib modules initialization
 __bl_trap_error_init
 unset -f '__bl_trap_error_init'
-__bl_sleep_init
-unset -f '__bl_sleep_init'
 __bl_log_init
 unset -f '__bl_log_init'
+__bl_sleep_init
+unset -f '__bl_sleep_init'
 # Bashlib initialization end
 
 # Main program

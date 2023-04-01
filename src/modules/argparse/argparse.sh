@@ -78,7 +78,7 @@
 #         7          sequence   :6:
 #
 #     more examples:
-#         argparse_defs="( :literal:mode:add: ([:parameter:add_all:a:all:] | :remaining:files:) | :literal:mode:commit: :parameter:p_commit_message:m:message: :variable:commit_message:str:)"
+#         __bl_argparse_arguments_definition="( :literal:mode:add: ([:parameter:add_all:a:all:] | :remaining:files:) | :literal:mode:commit: :parameter:p_commit_message:m:message: :variable:commit_message:str:)"
 
 ################################################################################
 __bl_argparse_load() {
@@ -837,7 +837,6 @@ __bl_argparse_load() {
 		#     __bl_argparse_input_tokens(list): user input tokens.
 		local -i last_tree_index
 
-		shift
 		__bl_argparse_input_tokens=( "${@}" )
 
 		# Add help section
